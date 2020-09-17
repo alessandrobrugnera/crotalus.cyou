@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no,
+initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
+    <title>Crotalus</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css"
+          integrity="sha512-EZLkOqwILORob+p0BXZc+Vm3RgJBOe1Iq/0fiI7r/wJgzOFZMlsqTa29UEl6v6U6gsV4uIpsNZoV32YZqrCRCQ=="
+          crossorigin="anonymous"/>
+    <style>
+        .column, .columns {
+            margin: 0;
+        }
+
+        body {
+            margin: 0;
+            background-color: #181a1b;
+            color: #ffffff;
+            justify-content: center;
+            align-items: center;
+        }
+
+        div {
+            text-align: center;
+        }
+
+        /*.better-center {
+            display: grid;
+            place-items: center
+        }*/
+
+        canvas {
+            display: block;
+        }
+
+        .button, button, input[type="submit"], input[type="reset"], input[type="button"] {
+            color: rgb(178, 172, 162);
+            text-decoration-color: currentcolor;
+            background-color: transparent;
+            border-color: rgb(67, 73, 76);
+        }
+    </style>
+    <script type="text/javascript" src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.1.9/p5.min.js"></script>
+    <script type="text/javascript"
+            src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.1.9/addons/p5.sound.min.js"></script>
+    <script type="text/javascript" src="navigator.js"></script>
+    <script type="text/javascript" src="canvas.js"></script>
+</head>
+<body>
+<main>
+    <div class="container" style="height: 100vh">
+        <div class="row better-center" style="height: 15vh">
+            <div class="one-half column join-host-match-buttons">
+                <button onclick="joinButtonPressed()" class="button-primary">JOIN</button>
+            </div>
+            <div class="one-half column join-host-match-buttons">
+                <button onclick="hostButtonPressed()">HOST</button>
+            </div>
+            <div class="one-half column join-insert-match-code">
+                <label for="match-code-input">Match code</label>
+                <input type="text" placeholder="0123456789ABCDEF" id="match-code-input">
+            </div>
+            <div class="one-half column join-insert-match-code">
+                <button class="button-primary">JOIN</button>
+            </div>
+            <div class="one-half column host-choose-mode">
+                <button class="button-primary">CLASSIC</button>
+            </div>
+            <div class="one-half column host-choose-mode">
+                <button class="button-primary">ONE HOT</button>
+            </div>
+        </div>
+        <div class="row" style="height: auto">
+            <div class="twelve columns" id="canvas-holder"></div>
+        </div>
+        <div class="row better-center" style="height: 15vh">
+            <div class="twelve columns">CIAO</div>
+        </div>
+    </div>
+</main>
+</body>
+</html>
