@@ -147,6 +147,8 @@ class Server {
         }
 
         if (aliveSnakes === 1) {
+            // Kill simulation. Game ended
+            clearInterval(this.simulationIntervalId);
             for (let i = 0; i < this.snakes.length; i++) {
                 if (!this.snakes[i].properties.dead) {
                     this.snakes[i].properties.peerjsConnection.send({event: "you-won"});
@@ -154,8 +156,6 @@ class Server {
                     this.snakes[i].properties.peerjsConnection.send({event: "you-lost"});
                 }
             }
-            // Kill simulation. Game ended
-            clearInterval(this.simulationIntervalId);
         }
 
         this.clearThings();
