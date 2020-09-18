@@ -7,6 +7,7 @@ class Server {
     static GAME_ENDED = 2;
 
     simFrameRate = 1;
+    peerDispatchRate = 1;
 
     width = 0;
     height = 0;
@@ -35,29 +36,31 @@ class Server {
 
         this.gameState = Server.IN_LOBBY;
 
-        this.peer.on("connection", (conn) => {
-            if (this.gameState === Server.IN_LOBBY) {
-                this.snakes.push(
-                    (new Snake()).initializeSnake(
-                        Server.random(0, this.width),
-                        Server.random(0, this.height)
-                    ));
-                this.snakes[this.snakes.length - 1].properties.peerjsConnection = conn;
-                this.snakes[this.snakes.length - 1].properties.dead = false;
-            } else {
-                conn.send({error: {message: "Game already started."}});
-                conn.close();
+        this.peer.on('open', () => {
+            this.peer.on("connection", (conn) => {
+                if (this.gameState === Server.IN_LOBBY) {
+                    this.snakes.push(
+                        (new Snake()).initializeSnake(
+                            Server.random(0, this.width),
+                            Server.random(0, this.height)
+                        ));
+                    this.snakes[this.snakes.length - 1].properties.peerjsConnection = conn;
+                    this.snakes[this.snakes.length - 1].properties.dead = false;
+                } else {
+                    conn.send({error: {message: "Game already started."}});
+                    conn.close();
+                }
+            });
+        });
+        this.peer.on("error", (e) => {
+            if (e.type === 'server-error') {
+                alert("Game server error: " + e.message);
+                alert("The page will now refresh! Sorry for the inconvenience");
+                location.reload();
             }
         });
 
-        this.peerDispatchInterval = setInterval(() => {
-            for (let i = 0; i < this.snakes.length; i++) {
-                this.snakes[i].properties.peerjsConnection.send({
-                    dimensions: {w: this.width, h: this.height},
-                    snakes: Snake.stringifyArray(this.snakes)
-                });
-            }
-        }, 80);
+        this.changePeerDispatchRate(this.peerDispatchRate);
     }
 
     startGame() {
@@ -87,6 +90,12 @@ class Server {
     simFrame = 0;
 
     runSimulation() {
+        if (this.mode === Server.CLASSIC_MODE) {
+            this.runClassicSimulation();
+        }
+    }
+
+    runClassicSimulation() {
         for (let i = 0; i < this.snakes.length; i++) {
             if (!this.snakes[i].properties.dead) {
                 for (let j = this.snakes[i].cells.length - 1; j > 0; j--) {
@@ -98,7 +107,7 @@ class Server {
                     this.snakes[i].cells[0].pos.y += this.snakes[i].properties.direction.y;
                     this.snakes[i].cells[0].color = [255, 0, 0];
 
-                    //TODO Adjust mechanism
+                    //TODO Adjust mechanism (now it bounces)
                     if (this.snakes[i].cells[0].pos.x > this.width || this.snakes[i].cells[0].pos.x < 0) {
                         this.snakes[i].properties.direction.x *= -1;
                         this.snakes[i].cells[0].pos.x += this.snakes[i].properties.direction.x * 2;
@@ -108,6 +117,13 @@ class Server {
                         this.snakes[i].cells[0].pos.y += this.snakes[i].properties.direction.y * 2;
                     }
                     //END TODO
+
+                    for (let j = 0; j < this.snakes.length; j++) {
+                        if (i === j) continue;
+                        if (this.snakes[i].collidingWith(this.snakes[j])) {
+                            this.snakes[i].properties.dead = true;
+                        }
+                    }
                 }
             }
         }
@@ -119,6 +135,20 @@ class Server {
         clearInterval(this.simulationIntervalId);
         let t = this;
         this.simulationIntervalId = setInterval(() => {t.runSimulation();}, 1000 / this.simFrameRate);
+    }
+
+    changePeerDispatchRate(fr) {
+        this.peerDispatchRate = fr;
+        clearInterval(this.peerDispatchInterval);
+        let t = this;
+        this.peerDispatchInterval = setInterval(() => {
+            for (let i = 0; i < t.snakes.length; i++) {
+                t.snakes[i].properties.peerjsConnection.send({
+                    dimensions: {w: t.width, h: t.height},
+                    snakes: Snake.stringifyArray(t.snakes)
+                });
+            }
+        }, 1000 / this.peerDispatchRate);
     }
 
     static random(min, max) {

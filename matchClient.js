@@ -17,6 +17,14 @@ class MatchClient {
                 }
             });
         });
+        this.peer.on("error", (e) => {
+            console.log(e);
+            if (e.type === 'server-error') {
+                alert("Game client error: " + e.message);
+                alert("The page will now refresh! Sorry for the inconvenience");
+                location.reload();
+            }
+        });
     }
 
     sendDirection(x, y) {

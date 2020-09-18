@@ -25,6 +25,10 @@ initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
             text-align: center;
         }
 
+        code {
+            background-color: #202324;
+        }
+
         /*.better-center {
             display: grid;
             place-items: center
@@ -75,19 +79,26 @@ initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
             <div class="one-half column host-choose-mode">
                 <button class="button-primary">ONE HOT</button>
             </div>
+            <div class="one-half column host-connecting">
+                CONNECTING...
+            </div>
             <div class="one-third column server-lobby-status">
                 There are currently <span id="server-player-count">0</span> players connected.
             </div>
             <div class="one-third column server-lobby-status">
+                Share this id to your friends: <code id="server-peer-id">waiting...</code>
+            </div>
+            <div class="one-third column server-lobby-status">
                 <button class="button-primary" onclick="startGame()">START</button>
             </div>
+
         </div>
-        <div class="row" style="height: auto">
+        <div class="row" style="height: auto; place-content: center; width: inherit">
             <div class="twelve columns" id="canvas-holder"></div>
         </div>
-        <div class="row better-center" style="height: 15vh">
+        <!-- <div class="row better-center" style="height: 15vh">
             <div class="twelve columns">CIAO</div>
-        </div>
+        </div> -->
     </div>
 </main>
 </body>

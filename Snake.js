@@ -9,6 +9,18 @@ class Snake {
 
     }
 
+    // Returns true only if this has the head inside snake.
+    collidingWith(snake) {
+        if (this.cells[0]) {
+            for (let i = 0; i < snake.cells.length; i++) {
+                if (snake.cells[i].pos.x === this.cells[0].pos.x && snake.cells[i].pos.y === this.cells[0].pos.y) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     initializeSnake(offsetX, offsetY) {
         Snake.initializeSnake(this, offsetX, offsetY);
         return this;

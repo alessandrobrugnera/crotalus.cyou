@@ -2,6 +2,22 @@ document.addEventListener('DOMContentLoaded', () => {
     hide("join-insert-match-code");
     hide("host-choose-mode");
     hide("server-lobby-status");
+    hide("host-connecting");
+
+    const urlParams = new URLSearchParams(window.location.search);
+    // Can be either host or join, not both
+    if (urlParams.get("host") !== null) {
+        if (urlParams.get("host") === "classic") {
+            hostButtonPressed();
+            classicGameHost();
+        } else if (urlParams.get("host") === "onehot") {
+            hostButtonPressed();
+        }
+    } else if (urlParams.get("join") !== null) {
+        joinButtonPressed();
+        gbI("match-code-input").value = urlParams.get("join");
+        gameJoin();
+    }
 });
 
 function joinButtonPressed() {
@@ -16,19 +32,25 @@ function hostButtonPressed() {
 
 function classicGameHost() {
     hide("host-choose-mode");
-    server = new Server(250, 250, Server.CLASSIC_MODE);
+    server = new Server(320, 180, Server.CLASSIC_MODE);
     server.peer.on('open', ()  => {
+        gbI("server-peer-id").innerText = server.peer.id;
         client = new MatchClient(server.peer.id);
+        hide("host-connecting");
+        show("server-lobby-status");
     });
     setInterval(() => {
         document.getElementById("server-player-count").innerText = server.snakes.length + "";
     }, 2000);
-    show("server-lobby-status");
+    show("host-connecting")
 }
 
 function startGame() {
     if (server) {
         server.startGame();
+        server.changeSimFrameRate(60);
+        server.changePeerDispatchRate(60);
+        windowResized();
         hide("server-lobby-status");
     }
 }

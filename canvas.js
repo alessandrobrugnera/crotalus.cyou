@@ -23,13 +23,64 @@ function draw() {
 }
 
 function windowResized() {
-    let mn = 1;
-    if (canvas.parent().id === "") {
-        mn = min(innerWidth, innerHeight);
+    let finalW = 1, finalH = 1;
+    if (client && client.dimensions) {
+        let matchAspectRatio = client.dimensions.w / client.dimensions.h;
+        let a, b;
+        if (canvas.parent().id === "") {
+            a = innerWidth;
+            b = innerHeight;
+        } else {
+            a = canvas.parent().clientWidth;
+            b = Math.floor(innerHeight * 0.85);
+        }
+        let screenAspectRatio = a / b;
+        if (matchAspectRatio >= 1) {
+            finalH = b;
+            finalW = finalH * matchAspectRatio;
+        } else {
+            finalW = a;
+            finalH = finalW / matchAspectRatio;
+        }
+        if (finalW > a) {
+            finalH *= a/finalW;
+            finalW = a;
+        } else if (finalH > b) {
+            finalW *= b/finalW;
+            finalH = b;
+        }
     } else {
-        mn = min(canvas.parent().clientWidth, Math.floor(innerHeight * 0.7));
+        let mn = 1;
+        if (canvas.parent().id === "") {
+            mn = min(innerWidth, innerHeight);
+        } else {
+            mn = min(canvas.parent().clientWidth, Math.floor(innerHeight * 0.85));
+        }
+        finalW = finalH = mn;
     }
-    resizeCanvas(mn, mn);
+    resizeCanvas(Math.floor(finalW), Math.floor(finalH));
+}
+
+function mouseClicked() {
+    if (mouseX > width - 10 && mouseX <= width && mouseY < 10 && mouseY >= 0) {
+        if (canvas.parent().id === "") {
+            unfullscreenCanvas();
+        } else {
+            fullscreenCanvas();
+        }
+    }
+    let coeffM = height / width;
+    let biggerThanMX = mouseY > coeffM * mouseX;
+    let biggerThanHmMX = mouseY > height - coeffM * mouseX;
+    if (biggerThanMX && biggerThanHmMX) { // This is DOWN
+        client.sendDirection(0, 1);
+    } else if (biggerThanMX && !biggerThanHmMX) { // This is LEFT
+        client.sendDirection(-1, 0);
+    } else if (!biggerThanMX && !biggerThanHmMX) { // This is UP
+        client.sendDirection(0, -1);
+    } else if (!biggerThanMX && biggerThanHmMX) { // This is RIGHT
+        client.sendDirection(1, 0);
+    }
 }
 
 function keyPressed() {
