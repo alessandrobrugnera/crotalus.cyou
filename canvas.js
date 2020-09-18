@@ -19,6 +19,20 @@ function draw() {
                 rect(tmpCell.pos.x * width / client.dimensions.w, tmpCell.pos.y * height / client.dimensions.h, width / client.dimensions.w, height / client.dimensions.h);
             }
         }
+        for (let i = 0; i < client.things.length; i++) {
+            let tmpThing = client.things[i];
+            if (tmpThing.type === "ClassicFood") {
+                noStroke();
+                fill(0, 255, 0);
+            }
+            rect(tmpThing.pos.x * width / client.dimensions.w, tmpThing.pos.y * height / client.dimensions.h, width / client.dimensions.w, height / client.dimensions.h);
+        }
+        if (client.receivedEvents.includes("you-won")) {
+            alert("YOU WON!");
+        }
+        if (client.receivedEvents.includes("you-lost")) {
+            alert("YOU LOST : (");
+        }
     }
 }
 

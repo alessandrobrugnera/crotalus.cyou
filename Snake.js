@@ -10,10 +10,21 @@ class Snake {
     }
 
     // Returns true only if this has the head inside snake.
-    collidingWith(snake) {
+    isCollidingWith(snake) {
         if (this.cells[0]) {
             for (let i = 0; i < snake.cells.length; i++) {
                 if (snake.cells[i].pos.x === this.cells[0].pos.x && snake.cells[i].pos.y === this.cells[0].pos.y) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    isSelfColliding() {
+        if (this.cells[0]) {
+            for (let i = 1; i < this.cells.length; i++) {
+                if (this.cells[i].pos.x === this.cells[0].pos.x && this.cells[i].pos.y === this.cells[0].pos.y) {
                     return true;
                 }
             }

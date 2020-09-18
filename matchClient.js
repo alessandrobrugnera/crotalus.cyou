@@ -1,6 +1,10 @@
 class MatchClient {
     snakes = [];
     dimensions = {w: 1, h: 1};
+    things = [];
+
+    receivedEvents = [];
+
     peer = undefined;
     serverConn = undefined;
 
@@ -14,6 +18,12 @@ class MatchClient {
                 }
                 if (dt.dimensions) {
                     this.dimensions = dt.dimensions;
+                }
+                if (dt.things) {
+                    this.things = dt.things;
+                }
+                if (dt.event) {
+                    this.receivedEvents.push(dt.event);
                 }
             });
         });

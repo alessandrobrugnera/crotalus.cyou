@@ -76,7 +76,10 @@ class Server {
                         dt.direction.x = Math.floor(dt.direction.x);
                         dt.direction.y = Math.floor(dt.direction.y);
                         if (Math.abs(dt.direction.x + dt.direction.y) === 1) {
-                            this.snakes[i].properties.direction = dt.direction;
+                            // TODO Two rapid changes will do the same as a single reverse action : (
+                            if (this.snakes[i].properties.direction.x !== -dt.direction.x && this.snakes[i].properties.direction.y !== -dt.direction.y) {
+                                this.snakes[i].properties.direction = dt.direction;
+                            }
                         }
                     }
                 });
@@ -96,8 +99,11 @@ class Server {
     }
 
     runClassicSimulation() {
+        let aliveSnakes = 0;
         for (let i = 0; i < this.snakes.length; i++) {
             if (!this.snakes[i].properties.dead) {
+                aliveSnakes++;
+
                 for (let j = this.snakes[i].cells.length - 1; j > 0; j--) {
                     this.snakes[i].cells[j].pos.x = this.snakes[i].cells[j - 1].pos.x;
                     this.snakes[i].cells[j].pos.y = this.snakes[i].cells[j - 1].pos.y;
@@ -120,12 +126,42 @@ class Server {
 
                     for (let j = 0; j < this.snakes.length; j++) {
                         if (i === j) continue;
-                        if (this.snakes[i].collidingWith(this.snakes[j])) {
+                        if (this.snakes[i].isCollidingWith(this.snakes[j])) {
                             this.snakes[i].properties.dead = true;
+                        }
+                    }
+                    if (this.snakes[i].isSelfColliding()) {
+                        this.snakes[i].properties.dead = true;
+                    }
+
+                    for (let j = 0; j < this.things.length; j++) {
+                        if (typeof this.things[j] === 'object' && this.things[j].constructor.name === 'ClassicFood') {
+                            if (this.snakes[i].cells[0].pos.x === this.things[j].pos.x && this.snakes[i].cells[0].pos.y === this.things[j].pos.y) {
+                                this.snakes[i].cells.push(new SnakeCell(null, null));
+                                this.things[j].properties.toBeRemoved = true;
+                            }
                         }
                     }
                 }
             }
+        }
+
+        if (aliveSnakes === 1) {
+            for (let i = 0; i < this.snakes.length; i++) {
+                if (!this.snakes[i].properties.dead) {
+                    this.snakes[i].properties.peerjsConnection.send({event: "you-won"});
+                } else {
+                    this.snakes[i].properties.peerjsConnection.send({event: "you-lost"});
+                }
+            }
+            // Kill simulation. Game ended
+            clearInterval(this.simulationIntervalId);
+        }
+
+        this.clearThings();
+
+        if (this.countThings("ClassicFood") < 1) {
+            this.things.push(new ClassicFood(Server.random(0, this.width), Server.random(0, this.height)));
         }
         this.simFrame++;
     }
@@ -134,7 +170,9 @@ class Server {
         this.simFrameRate = fr;
         clearInterval(this.simulationIntervalId);
         let t = this;
-        this.simulationIntervalId = setInterval(() => {t.runSimulation();}, 1000 / this.simFrameRate);
+        this.simulationIntervalId = setInterval(() => {
+            t.runSimulation();
+        }, 1000 / this.simFrameRate);
     }
 
     changePeerDispatchRate(fr) {
@@ -145,13 +183,41 @@ class Server {
             for (let i = 0; i < t.snakes.length; i++) {
                 t.snakes[i].properties.peerjsConnection.send({
                     dimensions: {w: t.width, h: t.height},
-                    snakes: Snake.stringifyArray(t.snakes)
+                    snakes: Snake.stringifyArray(t.snakes),
+                    things: this.stringifyThings()
                 });
             }
         }, 1000 / this.peerDispatchRate);
     }
 
+    countThings(type) {
+        let count = 0;
+        for (let i = 0; i < this.things.length; i++) {
+            if (this.things[i].constructor.name === type) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    clearThings() {
+        for (let i = 0; i < this.things.length; i++) {
+            if (this.things[i].properties.toBeRemoved) {
+                this.things.splice(i, 1);
+                i--;
+            }
+        }
+    }
+
     static random(min, max) {
         return Math.floor(Math.random() * (max - min) + min);
+    }
+
+    stringifyThings() {
+        let toRet = [];
+        for (let i = 0; i < this.things.length; i++) {
+            toRet.push(this.things[i].stringify());
+        }
+        return toRet;
     }
 }
