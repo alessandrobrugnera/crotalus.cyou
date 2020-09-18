@@ -45,7 +45,11 @@ initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.1.9/p5.min.js"></script>
     <script type="text/javascript"
             src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.1.9/addons/p5.sound.min.js"></script>
+    <script type="text/javascript" src="SnakeCell.js"></script>
+    <script type="text/javascript" src="Snake.js"></script>
     <script type="text/javascript" src="navigator.js"></script>
+    <script type="text/javascript" src="server.js"></script>
+    <script type="text/javascript" src="matchClient.js"></script>
     <script type="text/javascript" src="canvas.js"></script>
 </head>
 <body>
@@ -63,13 +67,19 @@ initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
                 <input type="text" placeholder="0123456789ABCDEF" id="match-code-input">
             </div>
             <div class="one-half column join-insert-match-code">
-                <button class="button-primary">JOIN</button>
+                <button class="button-primary" onclick="gameJoin()">JOIN</button>
             </div>
             <div class="one-half column host-choose-mode">
-                <button class="button-primary">CLASSIC</button>
+                <button class="button-primary" onclick="classicGameHost()">CLASSIC</button>
             </div>
             <div class="one-half column host-choose-mode">
                 <button class="button-primary">ONE HOT</button>
+            </div>
+            <div class="one-third column server-lobby-status">
+                There are currently <span id="server-player-count">0</span> players connected.
+            </div>
+            <div class="one-third column server-lobby-status">
+                <button class="button-primary" onclick="startGame()">START</button>
             </div>
         </div>
         <div class="row" style="height: auto">
