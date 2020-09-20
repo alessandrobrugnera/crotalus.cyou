@@ -74,10 +74,13 @@ initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
             <div class="one-half column join-insert-match-code">
                 <button class="button-primary" onclick="gameJoin()">JOIN</button>
             </div>
-            <div class="one-half column host-choose-mode">
+            <div class="one-third column host-choose-mode">
+                <button class="button-primary" onclick="singlePlayerGameHost()">SINGLE</button>
+            </div>
+            <div class="one-third column host-choose-mode">
                 <button class="button-primary" onclick="classicGameHost()">CLASSIC</button>
             </div>
-            <div class="one-half column host-choose-mode">
+            <div class="one-third column host-choose-mode">
                 <button class="button-primary">ONE HOT</button>
             </div>
             <div class="one-half column host-connecting">
@@ -87,7 +90,7 @@ initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
                 There are currently <span id="server-player-count">0</span> players connected.
             </div>
             <div class="one-third column server-lobby-status">
-                Share this id to your friends: <code id="server-peer-id">waiting...</code>
+                Share this id to your friends: <code id="server-peer-id">waiting...</code><button onclick="copyJoinLink()">Copy link</button>
             </div>
             <div class="one-third column server-lobby-status">
                 <button class="button-primary" onclick="startGame()">START</button>

@@ -1,6 +1,7 @@
 class Server {
     static CLASSIC_MODE = 0;
     static ONE_HOT_MODE = 1;
+    static SINGLE_MODE = 2;
 
     static IN_LOBBY = 0;
     static IN_GAME = 1;
@@ -20,7 +21,7 @@ class Server {
     peerDispatchInterval = -1;
 
     constructor(width, height, mode) {
-        if (mode !== Server.CLASSIC_MODE && mode !== Server.ONE_HOT_MODE) {
+        if (mode !== Server.CLASSIC_MODE && mode !== Server.ONE_HOT_MODE && mode !== Server.SINGLE_MODE) {
             throw new Error("Invalid server mode specified");
         }
         if (width <= 0 || height <= 0) {
@@ -83,6 +84,16 @@ class Server {
                         }
                     }
                 });
+            } else if (this.mode === Server.SINGLE_MODE) {
+                this.snakes[i].properties.peerjsConnection.on("data", (dt) => {
+                    if (dt.direction) {
+                        dt.direction.x = Math.floor(dt.direction.x);
+                        dt.direction.y = Math.floor(dt.direction.y);
+                        if (Math.abs(dt.direction.x + dt.direction.y) === 1) {
+                            this.snakes[i].properties.direction = dt.direction;
+                        }
+                    }
+                });
             }
         }
 
@@ -95,6 +106,8 @@ class Server {
     runSimulation() {
         if (this.mode === Server.CLASSIC_MODE) {
             this.runClassicSimulation();
+        } else if (this.mode === Server.SINGLE_MODE) {
+            this.runSinglePlayerSimulation();
         }
     }
 
@@ -153,6 +166,64 @@ class Server {
                 if (!this.snakes[i].properties.dead) {
                     this.snakes[i].properties.peerjsConnection.send({event: "you-won"});
                 } else {
+                    this.snakes[i].properties.peerjsConnection.send({event: "you-lost"});
+                }
+            }
+        }
+
+        this.clearThings();
+
+        if (this.countThings("ClassicFood") < Math.ceil(this.snakes.length / 2)) {
+            this.things.push(new ClassicFood(Server.random(0, this.width), Server.random(0, this.height)));
+        }
+        this.simFrame++;
+    }
+
+    runSinglePlayerSimulation() {
+        let aliveSnakes = 0;
+        for (let i = 0; i < this.snakes.length; i++) {
+            if (!this.snakes[i].properties.dead) {
+                aliveSnakes++;
+                for (let j = this.snakes[i].cells.length - 1; j > 0; j--) {
+                    this.snakes[i].cells[j].pos.x = this.snakes[i].cells[j - 1].pos.x;
+                    this.snakes[i].cells[j].pos.y = this.snakes[i].cells[j - 1].pos.y;
+                }
+                if (this.snakes[i].cells[0]) {
+                    this.snakes[i].cells[0].pos.x += this.snakes[i].properties.direction.x;
+                    this.snakes[i].cells[0].pos.y += this.snakes[i].properties.direction.y;
+                    this.snakes[i].cells[0].color = [255, 0, 0];
+
+                    //TODO Adjust mechanism (now it bounces)
+                    if (this.snakes[i].cells[0].pos.x > this.width || this.snakes[i].cells[0].pos.x < 0) {
+                        this.snakes[i].properties.direction.x *= -1;
+                        this.snakes[i].cells[0].pos.x += this.snakes[i].properties.direction.x * 2;
+                    }
+                    if (this.snakes[i].cells[0].pos.y > this.height || this.snakes[i].cells[0].pos.y < 0) {
+                        this.snakes[i].properties.direction.y *= -1;
+                        this.snakes[i].cells[0].pos.y += this.snakes[i].properties.direction.y * 2;
+                    }
+                    //END TODO
+                    if (this.snakes[i].isSelfColliding()) {
+                        this.snakes[i].properties.dead = true;
+                    }
+
+                    for (let j = 0; j < this.things.length; j++) {
+                        if (typeof this.things[j] === 'object' && this.things[j].constructor.name === 'ClassicFood') {
+                            if (this.snakes[i].cells[0].pos.x === this.things[j].pos.x && this.snakes[i].cells[0].pos.y === this.things[j].pos.y) {
+                                this.snakes[i].cells.push(new SnakeCell(null, null));
+                                this.things[j].properties.toBeRemoved = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (aliveSnakes === 0) {
+            // Kill simulation. Game ended
+            clearInterval(this.simulationIntervalId);
+            for (let i = 0; i < this.snakes.length; i++) {
+                if (this.snakes[i].properties.dead) {
                     this.snakes[i].properties.peerjsConnection.send({event: "you-lost"});
                 }
             }

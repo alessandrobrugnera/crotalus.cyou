@@ -2,6 +2,11 @@ let canvas;
 let server = undefined;
 let client = undefined;
 
+let images = {};
+function preload() {
+    images.fs = loadImage("images/fs.jpg");
+}
+
 function setup() {
     canvas = createCanvas(innerWidth, innerHeight * 0.7)
         .parent('canvas-holder');
@@ -28,12 +33,15 @@ function draw() {
             rect(tmpThing.pos.x * width / client.dimensions.w, tmpThing.pos.y * height / client.dimensions.h, width / client.dimensions.w, height / client.dimensions.h);
         }
         if (client.receivedEvents.includes("you-won")) {
+            noLoop();
             alert("YOU WON!");
         }
         if (client.receivedEvents.includes("you-lost")) {
+            noLoop();
             alert("YOU LOST : (");
         }
     }
+    image(images.fs, width - 10, 0);
 }
 
 function windowResized() {
@@ -83,17 +91,19 @@ function mouseClicked() {
             fullscreenCanvas();
         }
     }
-    let coeffM = height / width;
-    let biggerThanMX = mouseY > coeffM * mouseX;
-    let biggerThanHmMX = mouseY > height - coeffM * mouseX;
-    if (biggerThanMX && biggerThanHmMX) { // This is DOWN
-        client.sendDirection(0, 1);
-    } else if (biggerThanMX && !biggerThanHmMX) { // This is LEFT
-        client.sendDirection(-1, 0);
-    } else if (!biggerThanMX && !biggerThanHmMX) { // This is UP
-        client.sendDirection(0, -1);
-    } else if (!biggerThanMX && biggerThanHmMX) { // This is RIGHT
-        client.sendDirection(1, 0);
+    if (client) {
+        let coeffM = height / width;
+        let biggerThanMX = mouseY > coeffM * mouseX;
+        let biggerThanHmMX = mouseY > height - coeffM * mouseX;
+        if (biggerThanMX && biggerThanHmMX) { // This is DOWN
+            client.sendDirection(0, 1);
+        } else if (biggerThanMX && !biggerThanHmMX) { // This is LEFT
+            client.sendDirection(-1, 0);
+        } else if (!biggerThanMX && !biggerThanHmMX) { // This is UP
+            client.sendDirection(0, -1);
+        } else if (!biggerThanMX && biggerThanHmMX) { // This is RIGHT
+            client.sendDirection(1, 0);
+        }
     }
 }
 

@@ -32,7 +32,7 @@ function hostButtonPressed() {
 
 function classicGameHost() {
     hide("host-choose-mode");
-    server = new Server(640, 360, Server.CLASSIC_MODE);
+    server = new Server(128, 128, Server.CLASSIC_MODE);
     server.peer.on('open', ()  => {
         gbI("server-peer-id").innerText = server.peer.id;
         client = new MatchClient(server.peer.id);
@@ -45,11 +45,27 @@ function classicGameHost() {
     show("host-connecting")
 }
 
+function singlePlayerGameHost() {
+    hide("host-choose-mode");
+    server = new Server(128, 128, Server.SINGLE_MODE);
+    server.peer.on('open', ()  => {
+        gbI("server-peer-id").innerText = server.peer.id;
+        client = new MatchClient(server.peer.id);
+        //client.peer.on("open", () => startGame());
+        hide("host-connecting");
+        show("server-lobby-status");
+    });
+    setInterval(() => {
+        document.getElementById("server-player-count").innerText = server.snakes.length + "";
+    }, 2000);
+    show("host-connecting")
+}
+
 function startGame() {
     if (server) {
         server.startGame();
-        server.changeSimFrameRate(40);
-        server.changePeerDispatchRate(40);
+        server.changeSimFrameRate(20);
+        server.changePeerDispatchRate(25);
         windowResized();
         hide("server-lobby-status");
     }
@@ -92,4 +108,8 @@ function show(className) {
     for (let i = 0; i < elements.length; i++) {
         elements[i].style.display = "block";
     }
+}
+
+function copyJoinLink() {
+    navigator.clipboard.writeText(location.origin + location.pathname + '?join=' + gbI('server-peer-id').innerText).then(() => alert("LINK COPIED"));
 }
