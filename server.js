@@ -203,9 +203,6 @@ class Server {
                         this.snakes[i].cells[0].pos.y += this.snakes[i].properties.direction.y * 2;
                     }
                     //END TODO
-                    if (this.snakes[i].isSelfColliding()) {
-                        this.snakes[i].properties.dead = true;
-                    }
 
                     for (let j = 0; j < this.things.length; j++) {
                         if (typeof this.things[j] === 'object' && this.things[j].constructor.name === 'ClassicFood') {
@@ -251,11 +248,13 @@ class Server {
         clearInterval(this.peerDispatchInterval);
         let t = this;
         this.peerDispatchInterval = setInterval(() => {
+            let snks = Snake.stringifyArray(t.snakes)
             for (let i = 0; i < t.snakes.length; i++) {
                 t.snakes[i].properties.peerjsConnection.send({
                     dimensions: {w: t.width, h: t.height},
-                    snakes: Snake.stringifyArray(t.snakes),
-                    things: this.stringifyThings()
+                    snakes: snks,
+                    things: t.stringifyThings(),
+                    yourIndex: i
                 });
             }
         }, 1000 / this.peerDispatchRate);

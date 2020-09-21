@@ -32,7 +32,7 @@ function hostButtonPressed() {
 
 function classicGameHost() {
     hide("host-choose-mode");
-    server = new Server(128, 128, Server.CLASSIC_MODE);
+    server = new Server(320, 180, Server.CLASSIC_MODE);
     server.peer.on('open', ()  => {
         gbI("server-peer-id").innerText = server.peer.id;
         client = new MatchClient(server.peer.id);
@@ -47,7 +47,7 @@ function classicGameHost() {
 
 function singlePlayerGameHost() {
     hide("host-choose-mode");
-    server = new Server(128, 128, Server.SINGLE_MODE);
+    server = new Server(320, 180, Server.SINGLE_MODE);
     server.peer.on('open', ()  => {
         gbI("server-peer-id").innerText = server.peer.id;
         client = new MatchClient(server.peer.id);
@@ -64,8 +64,8 @@ function singlePlayerGameHost() {
 function startGame() {
     if (server) {
         server.startGame();
-        server.changeSimFrameRate(20);
-        server.changePeerDispatchRate(25);
+        server.changeSimFrameRate(15);
+        server.changePeerDispatchRate(10);
         windowResized();
         hide("server-lobby-status");
     }

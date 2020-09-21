@@ -3,6 +3,8 @@ class MatchClient {
     dimensions = {w: 1, h: 1};
     things = [];
 
+    mySnakeIndex = -1;
+
     receivedEvents = [];
 
     peer = undefined;
@@ -24,6 +26,9 @@ class MatchClient {
                 }
                 if (dt.event) {
                     this.receivedEvents.push(dt.event);
+                }
+                if (typeof dt.yourIndex !== 'undefined') {
+                    this.mySnakeIndex = dt.yourIndex;
                 }
             });
         });
