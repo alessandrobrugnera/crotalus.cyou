@@ -6,6 +6,7 @@ let images = {};
 let visualEffets = [];
 function preload() {
     SimpleExplosion.loadFrames();
+    SpeedBoostEffect.loadFrames();
     images.fs = loadImage("images/fs.jpg");
 }
 
@@ -46,6 +47,9 @@ function draw() {
             if (typeof eve !== "object") continue;
             if (eve.name === "explosion") {
                 visualEffets.push(new SimpleExplosion(eve.data.x * width / client.dimensions.w, eve.data.y * height / client.dimensions.h, millis()));
+                client.removeEvent(i--);
+            } else if (eve.name === "speed-boost-effect") {
+                visualEffets.push(new SpeedBoostEffect(eve.data.x * width / client.dimensions.w, eve.data.y * height / client.dimensions.h, millis()));
                 client.removeEvent(i--);
             } else if (eve.name === "you-won") {
                 noLoop();

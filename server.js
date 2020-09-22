@@ -276,6 +276,7 @@ class Server {
                                 currSnake.properties.speedBoost = 2;
                                 currSnake.properties.speedBoostDeadline = this.elapsedTime() + 4;
                                 this.things[j].properties.toBeRemoved = true;
+                                this.broadcastEvent("speed-boost-effect", snakeHead.pos);
                             }
                         }
                     }
