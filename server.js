@@ -14,6 +14,7 @@ class Server {
     height = 0;
     snakes = [];
     things = [];
+    properties = {};
     peer = undefined;
     mode = -1;
     gameState = -1;
@@ -94,6 +95,19 @@ class Server {
                         }
                     }
                 });
+            } else if (this.mode === Server.ONE_HOT_MODE) {
+                this.snakes[i].properties.peerjsConnection.on("data", (dt) => {
+                    if (dt.direction) {
+                        dt.direction.x = Math.floor(dt.direction.x);
+                        dt.direction.y = Math.floor(dt.direction.y);
+                        if (Math.abs(dt.direction.x + dt.direction.y) === 1) {
+                            // TODO Two rapid changes will do the same as a single reverse action : (
+                            if (this.snakes[i].properties.direction.x !== -dt.direction.x && this.snakes[i].properties.direction.y !== -dt.direction.y) {
+                                this.snakes[i].properties.direction = dt.direction;
+                            }
+                        }
+                    }
+                });
             }
         }
 
@@ -108,49 +122,53 @@ class Server {
             this.runClassicSimulation();
         } else if (this.mode === Server.SINGLE_MODE) {
             this.runSinglePlayerSimulation();
+        } else if (this.mode === Server.ONE_HOT_MODE) {
+            this.runOneHotSimulation();
         }
     }
 
     runClassicSimulation() {
         let aliveSnakes = 0;
         for (let i = 0; i < this.snakes.length; i++) {
-            if (!this.snakes[i].properties.dead) {
+            let currSnake = this.snakes[i];
+            if (!currSnake.properties.dead) {
                 aliveSnakes++;
 
-                for (let j = this.snakes[i].cells.length - 1; j > 0; j--) {
-                    this.snakes[i].cells[j].pos.x = this.snakes[i].cells[j - 1].pos.x;
-                    this.snakes[i].cells[j].pos.y = this.snakes[i].cells[j - 1].pos.y;
+                for (let j = currSnake.cells.length - 1; j > 0; j--) {
+                    currSnake.cells[j].pos.x = currSnake.cells[j - 1].pos.x;
+                    currSnake.cells[j].pos.y = currSnake.cells[j - 1].pos.y;
                 }
-                if (this.snakes[i].cells[0]) {
-                    this.snakes[i].cells[0].pos.x += this.snakes[i].properties.direction.x;
-                    this.snakes[i].cells[0].pos.y += this.snakes[i].properties.direction.y;
-                    this.snakes[i].cells[0].color = [255, 0, 0];
+                let snakeHead = currSnake.cells[0];
+                if (snakeHead) {
+                    snakeHead.pos.x += currSnake.properties.direction.x;
+                    snakeHead.pos.y += currSnake.properties.direction.y;
+                    snakeHead.color = Colors.RED;
 
                     //TODO Adjust mechanism (now it bounces)
-                    if (this.snakes[i].cells[0].pos.x > this.width || this.snakes[i].cells[0].pos.x < 0) {
-                        this.snakes[i].properties.direction.x *= -1;
-                        this.snakes[i].cells[0].pos.x += this.snakes[i].properties.direction.x * 2;
+                    if (snakeHead.pos.x > this.width || snakeHead.pos.x < 0) {
+                        currSnake.properties.direction.x *= -1;
+                        snakeHead.pos.x += currSnake.properties.direction.x * 2;
                     }
-                    if (this.snakes[i].cells[0].pos.y > this.height || this.snakes[i].cells[0].pos.y < 0) {
-                        this.snakes[i].properties.direction.y *= -1;
-                        this.snakes[i].cells[0].pos.y += this.snakes[i].properties.direction.y * 2;
+                    if (snakeHead.pos.y > this.height || snakeHead.pos.y < 0) {
+                        currSnake.properties.direction.y *= -1;
+                        snakeHead.pos.y += currSnake.properties.direction.y * 2;
                     }
                     //END TODO
 
                     for (let j = 0; j < this.snakes.length; j++) {
                         if (i === j) continue;
-                        if (this.snakes[i].isCollidingWith(this.snakes[j])) {
-                            this.snakes[i].properties.dead = true;
+                        if (currSnake.isCollidingWith(this.snakes[j])) {
+                            currSnake.properties.dead = true;
                         }
                     }
-                    if (this.snakes[i].isSelfColliding()) {
-                        this.snakes[i].properties.dead = true;
+                    if (currSnake.isSelfColliding()) {
+                        currSnake.properties.dead = true;
                     }
 
                     for (let j = 0; j < this.things.length; j++) {
                         if (typeof this.things[j] === 'object' && this.things[j].constructor.name === 'ClassicFood') {
-                            if (this.snakes[i].cells[0].pos.x === this.things[j].pos.x && this.snakes[i].cells[0].pos.y === this.things[j].pos.y) {
-                                this.snakes[i].cells.push(new SnakeCell(null, null));
+                            if (Server.posEq(snakeHead.pos, this.things[j].pos)) {
+                                currSnake.cells.push(new SnakeCell(null, null));
                                 this.things[j].properties.toBeRemoved = true;
                             }
                         }
@@ -162,6 +180,7 @@ class Server {
         if (aliveSnakes === 1) {
             // Kill simulation. Game ended
             clearInterval(this.simulationIntervalId);
+            this.gameState = Server.GAME_ENDED;
             for (let i = 0; i < this.snakes.length; i++) {
                 if (!this.snakes[i].properties.dead) {
                     this.snakes[i].properties.peerjsConnection.send({event: "you-won"});
@@ -180,47 +199,148 @@ class Server {
     }
 
     runSinglePlayerSimulation() {
-        let aliveSnakes = 0;
-        for (let i = 0; i < this.snakes.length; i++) {
-            if (!this.snakes[i].properties.dead) {
-                aliveSnakes++;
-                for (let j = this.snakes[i].cells.length - 1; j > 0; j--) {
-                    this.snakes[i].cells[j].pos.x = this.snakes[i].cells[j - 1].pos.x;
-                    this.snakes[i].cells[j].pos.y = this.snakes[i].cells[j - 1].pos.y;
+        if (this.snakes[0]) {
+            let snake = this.snakes[0];
+            if (!snake.properties.dead) {
+                for (let j = snake.cells.length - 1; j > 0; j--) {
+                    snake.cells[j].pos.x = snake.cells[j - 1].pos.x;
+                    snake.cells[j].pos.y = snake.cells[j - 1].pos.y;
                 }
-                if (this.snakes[i].cells[0]) {
-                    this.snakes[i].cells[0].pos.x += this.snakes[i].properties.direction.x;
-                    this.snakes[i].cells[0].pos.y += this.snakes[i].properties.direction.y;
-                    this.snakes[i].cells[0].color = [255, 0, 0];
+                if (snake.cells[0]) {
+                    let head = snake.cells[0];
+                    head.pos.x += snake.properties.direction.x;
+                    head.pos.y += snake.properties.direction.y;
+                    head.color = Colors.RED;
 
-                    //TODO Adjust mechanism (now it bounces)
-                    if (this.snakes[i].cells[0].pos.x > this.width || this.snakes[i].cells[0].pos.x < 0) {
-                        this.snakes[i].properties.direction.x *= -1;
-                        this.snakes[i].cells[0].pos.x += this.snakes[i].properties.direction.x * 2;
+                    if (head.pos.x < 0) {
+                        head.pos.x = this.width - 1;
                     }
-                    if (this.snakes[i].cells[0].pos.y > this.height || this.snakes[i].cells[0].pos.y < 0) {
-                        this.snakes[i].properties.direction.y *= -1;
-                        this.snakes[i].cells[0].pos.y += this.snakes[i].properties.direction.y * 2;
+                    if (head.pos.x >= this.width) {
+                        head.pos.x = 0;
                     }
-                    //END TODO
+                    if (head.pos.y < 0) {
+                        head.pos.y = this.height - 1;
+                    }
+                    if (head.pos.y >= this.height) {
+                        head.pos.y = 0;
+                    }
 
                     for (let j = 0; j < this.things.length; j++) {
                         if (typeof this.things[j] === 'object' && this.things[j].constructor.name === 'ClassicFood') {
-                            if (this.snakes[i].cells[0].pos.x === this.things[j].pos.x && this.snakes[i].cells[0].pos.y === this.things[j].pos.y) {
-                                this.snakes[i].cells.push(new SnakeCell(null, null));
+                            if (Server.posEq(head.pos, this.things[j].pos)) {
+                                snake.cells.push(new SnakeCell(null, null));
                                 this.things[j].properties.toBeRemoved = true;
                             }
+                        }
+                    }
+                }
+                if (snake.isSelfColliding()) {
+                    snake.properties.dead = true;
+                }
+            } else {
+                clearInterval(this.simulationIntervalId);
+                snake.properties.peerjsConnection.send({event: "you-lost"});
+            }
+        }
+
+        this.clearThings();
+
+        if (this.countThings("ClassicFood") < 1) {
+            this.things.push(new ClassicFood(Server.random(0, this.width), Server.random(0, this.height)));
+        }
+        this.simFrame++;
+    }
+
+    runOneHotSimulation() {
+        let aliveSnakes = 0;
+        for (let i = 0; i < this.snakes.length; i++) {
+            let currSnake = this.snakes[i];
+            for (let j = 0; j < currSnake.cells.length; j++) {
+                if (currSnake.properties.dead) {
+                    currSnake.cells[j].color = Colors.BLUE;
+                } else if (currSnake.properties.isHot) {
+                    currSnake.cells[j].color = Colors.RED;
+                } else {
+                    currSnake.cells[j].color = Colors.WHITE;
+                }
+            }
+            if (!currSnake.properties.dead) {
+                aliveSnakes++;
+
+                for (let j = currSnake.cells.length - 1; j > 0; j--) {
+                    currSnake.cells[j].pos.x = currSnake.cells[j - 1].pos.x;
+                    currSnake.cells[j].pos.y = currSnake.cells[j - 1].pos.y;
+                }
+
+                let snakeHead = currSnake.cells[0];
+                if (snakeHead) {
+                    snakeHead.pos.x += currSnake.properties.direction.x;
+                    snakeHead.pos.y += currSnake.properties.direction.y;
+                    snakeHead.color = Colors.RED;
+
+                    if (snakeHead.pos.x < 0) {
+                        snakeHead.pos.x = this.width - 1;
+                    }
+                    if (snakeHead.pos.x >= this.width) {
+                        snakeHead.pos.x = 0;
+                    }
+                    if (snakeHead.pos.y < 0) {
+                        snakeHead.pos.y = this.height - 1;
+                    }
+                    if (snakeHead.pos.y >= this.height) {
+                        snakeHead.pos.y = 0;
+                    }
+
+                    for (let j = 0; j < this.things.length; j++) {
+                        if (typeof this.things[j] === 'object' && this.things[j].constructor.name === 'ClassicFood') {
+                            if (Server.posEq(snakeHead.pos, this.things[j].pos)) {
+                                currSnake.cells.push(new SnakeCell(null, null));
+                                this.things[j].properties.toBeRemoved = true;
+                            }
+                        }
+                    }
+                }
+                if (currSnake.properties.isHot) {
+                    for (let j = 0; j < this.snakes.length; j++) {
+                        if (i === j) continue;
+                        if (currSnake.isCollidingWith(this.snakes[j]) && !this.snakes[j].properties.dead) {
+                            currSnake.properties.isHot = false;
+                            this.snakes[j].properties.isHot = true;
                         }
                     }
                 }
             }
         }
 
-        if (aliveSnakes === 0) {
+        if (!this.properties.checkHotsDone && Math.floor(this.elapsedTime()) % 45 === 0) {
+            for (let j = 0; j < this.snakes.length; j++) {
+                if (this.snakes[j].properties.isHot) {
+                    this.snakes[j].properties.dead = true;
+                }
+            }
+            if (aliveSnakes !== 0) {
+                let t = this;
+                setTimeout(() => {
+                    let newHotIndex = Server.random(0, t.snakes.length - 1);
+                    while (t.snakes[newHotIndex].properties.dead) {
+                        newHotIndex = Server.random(0, t.snakes.length - 1);
+                    }
+                    t.snakes[newHotIndex].properties.isHot = true;
+                }, 1000);
+            }
+            this.properties.checkHotsDone = true;
+        } else if (Math.floor(this.elapsedTime()) % 45 === 1) {
+            this.properties.checkHotsDone = false;
+        }
+
+        if (aliveSnakes === 1) {
             // Kill simulation. Game ended
             clearInterval(this.simulationIntervalId);
+            this.gameState = Server.GAME_ENDED;
             for (let i = 0; i < this.snakes.length; i++) {
-                if (this.snakes[i].properties.dead) {
+                if (!this.snakes[i].properties.dead) {
+                    this.snakes[i].properties.peerjsConnection.send({event: "you-won"});
+                } else {
                     this.snakes[i].properties.peerjsConnection.send({event: "you-lost"});
                 }
             }
@@ -228,7 +348,7 @@ class Server {
 
         this.clearThings();
 
-        if (this.countThings("ClassicFood") < 1) {
+        if (this.countThings("ClassicFood") < Math.ceil(this.snakes.length / 2)) {
             this.things.push(new ClassicFood(Server.random(0, this.width), Server.random(0, this.height)));
         }
         this.simFrame++;
@@ -280,7 +400,33 @@ class Server {
     }
 
     static random(min, max) {
-        return Math.floor(Math.random() * (max - min) + min);
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    static posEq(pos1, pos2) {
+        if (!pos1 || !pos2) {
+            return false;
+        }
+        if (typeof pos1.x !== "undefined" && typeof pos2.x !== "undefined") {
+            if (pos1.x !== pos2.x) {
+                return false;
+            }
+        }
+        if (typeof pos1.y !== "undefined" && typeof pos2.y !== "undefined") {
+            if (pos1.y !== pos2.y) {
+                return false;
+            }
+        }
+        if (typeof pos1.z !== "undefined" && typeof pos2.z !== "undefined") {
+            if (pos1.z !== pos2.z) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    elapsedTime() {
+        return this.simFrame / this.simFrameRate;
     }
 
     stringifyThings() {

@@ -33,6 +33,9 @@ function draw() {
             if (tmpThing.type === "ClassicFood") {
                 noStroke();
                 fill(0, 255, 0);
+            } else if (tmpThing.type === "SpeedBooster") {
+                noStroke();
+                fill(0, 0, 255);
             }
             rect(tmpThing.pos.x * width / client.dimensions.w, tmpThing.pos.y * height / client.dimensions.h, width / client.dimensions.w, height / client.dimensions.h);
         }

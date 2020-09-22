@@ -50,12 +50,15 @@ initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
     <script type="text/javascript"
             src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.1.9/addons/p5.sound.min.js"></script>
     <script type="text/javascript" src="matchThings/ClassicFood.js"></script>
+    <script type="text/javascript" src="matchThings/SpeedBooster.js"></script>
+    <script type="text/javascript" src="Colors.js"></script>
     <script type="text/javascript" src="SnakeCell.js"></script>
     <script type="text/javascript" src="Snake.js"></script>
     <script type="text/javascript" src="navigator.js"></script>
     <script type="text/javascript" src="server.js"></script>
     <script type="text/javascript" src="matchClient.js"></script>
     <script type="text/javascript" src="canvas.js"></script>
+    <script type="text/javascript" src="SnakeBot.js"></script>
 </head>
 <body>
 <main>
@@ -81,7 +84,7 @@ initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
                 <button class="button-primary" onclick="classicGameHost()">CLASSIC</button>
             </div>
             <div class="one-third column host-choose-mode">
-                <button class="button-primary">ONE HOT</button>
+                <button class="button-primary" onclick="oneHotGameHost()">ONE HOT</button>
             </div>
             <div class="one-half column host-connecting">
                 CONNECTING...

@@ -12,6 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
             classicGameHost();
         } else if (urlParams.get("host") === "onehot") {
             hostButtonPressed();
+            oneHotGameHost();
+        } else if (urlParams.get("host") === "single") {
+            hostButtonPressed();
+            singlePlayerGameHost();
         }
     } else if (urlParams.get("join") !== null) {
         joinButtonPressed();
@@ -31,27 +35,23 @@ function hostButtonPressed() {
 }
 
 function classicGameHost() {
-    hide("host-choose-mode");
-    server = new Server(320, 180, Server.CLASSIC_MODE);
-    server.peer.on('open', ()  => {
-        gbI("server-peer-id").innerText = server.peer.id;
-        client = new MatchClient(server.peer.id);
-        hide("host-connecting");
-        show("server-lobby-status");
-    });
-    setInterval(() => {
-        document.getElementById("server-player-count").innerText = server.snakes.length + "";
-    }, 2000);
-    show("host-connecting")
+    createServer(Server.CLASSIC_MODE);
 }
 
 function singlePlayerGameHost() {
+    createServer(Server.SINGLE_MODE);
+}
+
+function oneHotGameHost() {
+    createServer(Server.ONE_HOT_MODE);
+}
+
+function createServer(mode) {
     hide("host-choose-mode");
-    server = new Server(320, 180, Server.SINGLE_MODE);
+    server = new Server(320, 180, mode);
     server.peer.on('open', ()  => {
         gbI("server-peer-id").innerText = server.peer.id;
         client = new MatchClient(server.peer.id);
-        //client.peer.on("open", () => startGame());
         hide("host-connecting");
         show("server-lobby-status");
     });
