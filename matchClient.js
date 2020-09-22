@@ -25,7 +25,8 @@ class MatchClient {
                     this.things = dt.things;
                 }
                 if (dt.event) {
-                    this.receivedEvents.push(dt.event);
+                    if (typeof dt.eventData === "undefined") dt.eventData = {};
+                    this.receivedEvents.push({name: dt.event, data: dt.eventData});
                 }
                 if (typeof dt.yourIndex !== 'undefined') {
                     this.mySnakeIndex = dt.yourIndex;
@@ -46,5 +47,10 @@ class MatchClient {
         if (this.serverConn && this.serverConn.open) {
             this.serverConn.send({direction: {x: x, y: y}});
         }
+    }
+
+    removeEvent(index) {
+        if (this.receivedEvents[index])
+            this.receivedEvents.splice(index, 1);
     }
 }

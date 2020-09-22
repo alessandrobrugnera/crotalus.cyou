@@ -144,16 +144,7 @@ class Server {
                     snakeHead.pos.y += currSnake.properties.direction.y;
                     snakeHead.color = Colors.RED;
 
-                    //TODO Adjust mechanism (now it bounces)
-                    if (snakeHead.pos.x > this.width || snakeHead.pos.x < 0) {
-                        currSnake.properties.direction.x *= -1;
-                        snakeHead.pos.x += currSnake.properties.direction.x * 2;
-                    }
-                    if (snakeHead.pos.y > this.height || snakeHead.pos.y < 0) {
-                        currSnake.properties.direction.y *= -1;
-                        snakeHead.pos.y += currSnake.properties.direction.y * 2;
-                    }
-                    //END TODO
+                    currSnake.edgeBounce(this.width, this.height);
 
                     for (let j = 0; j < this.snakes.length; j++) {
                         if (i === j) continue;
@@ -166,7 +157,8 @@ class Server {
                     }
 
                     for (let j = 0; j < this.things.length; j++) {
-                        if (typeof this.things[j] === 'object' && this.things[j].constructor.name === 'ClassicFood') {
+                        if (typeof this.things[j] !== 'object') continue;
+                        if (this.things[j].constructor.name === 'ClassicFood') {
                             if (Server.posEq(snakeHead.pos, this.things[j].pos)) {
                                 currSnake.cells.push(new SnakeCell(null, null));
                                 this.things[j].properties.toBeRemoved = true;
@@ -212,18 +204,7 @@ class Server {
                     head.pos.y += snake.properties.direction.y;
                     head.color = Colors.RED;
 
-                    if (head.pos.x < 0) {
-                        head.pos.x = this.width - 1;
-                    }
-                    if (head.pos.x >= this.width) {
-                        head.pos.x = 0;
-                    }
-                    if (head.pos.y < 0) {
-                        head.pos.y = this.height - 1;
-                    }
-                    if (head.pos.y >= this.height) {
-                        head.pos.y = 0;
-                    }
+                    snake.edgeTeleport(this.width, this.height);
 
                     for (let j = 0; j < this.things.length; j++) {
                         if (typeof this.things[j] === 'object' && this.things[j].constructor.name === 'ClassicFood') {
@@ -255,6 +236,9 @@ class Server {
         let aliveSnakes = 0;
         for (let i = 0; i < this.snakes.length; i++) {
             let currSnake = this.snakes[i];
+            if (typeof currSnake.properties.speedBoost === "undefined") {
+                currSnake.properties.speedBoost = 1;
+            }
             for (let j = 0; j < currSnake.cells.length; j++) {
                 if (currSnake.properties.dead) {
                     currSnake.cells[j].color = Colors.BLUE;
@@ -274,27 +258,23 @@ class Server {
 
                 let snakeHead = currSnake.cells[0];
                 if (snakeHead) {
-                    snakeHead.pos.x += currSnake.properties.direction.x;
-                    snakeHead.pos.y += currSnake.properties.direction.y;
+                    snakeHead.pos.x += currSnake.properties.direction.x * currSnake.properties.speedBoost;
+                    snakeHead.pos.y += currSnake.properties.direction.y * currSnake.properties.speedBoost;
                     snakeHead.color = Colors.RED;
 
-                    if (snakeHead.pos.x < 0) {
-                        snakeHead.pos.x = this.width - 1;
-                    }
-                    if (snakeHead.pos.x >= this.width) {
-                        snakeHead.pos.x = 0;
-                    }
-                    if (snakeHead.pos.y < 0) {
-                        snakeHead.pos.y = this.height - 1;
-                    }
-                    if (snakeHead.pos.y >= this.height) {
-                        snakeHead.pos.y = 0;
-                    }
+                    currSnake.edgeTeleport(this.width, this.height);
 
                     for (let j = 0; j < this.things.length; j++) {
-                        if (typeof this.things[j] === 'object' && this.things[j].constructor.name === 'ClassicFood') {
+                        if (typeof this.things[j] !== "object") continue;
+                        if (this.things[j].constructor.name === 'ClassicFood') {
                             if (Server.posEq(snakeHead.pos, this.things[j].pos)) {
                                 currSnake.cells.push(new SnakeCell(null, null));
+                                this.things[j].properties.toBeRemoved = true;
+                            }
+                        } else if (this.things[j].constructor.name === 'SpeedBooster') {
+                            if (Server.posEq(snakeHead.pos, this.things[j].pos)) {
+                                currSnake.properties.speedBoost = 2;
+                                currSnake.properties.speedBoostDeadline = this.elapsedTime() + 4;
                                 this.things[j].properties.toBeRemoved = true;
                             }
                         }
@@ -309,13 +289,18 @@ class Server {
                         }
                     }
                 }
+                if (currSnake.properties.speedBoostDeadline < this.elapsedTime()) {
+                    currSnake.properties.speedBoost = 1;
+                }
             }
         }
 
-        if (!this.properties.checkHotsDone && Math.floor(this.elapsedTime()) % 45 === 0) {
+        if (!this.properties.checkHotsDone && Math.floor(this.elapsedTime()) % 10 === 0) {
             for (let j = 0; j < this.snakes.length; j++) {
                 if (this.snakes[j].properties.isHot) {
+                    this.snakes[j].properties.isHot = false;
                     this.snakes[j].properties.dead = true;
+                    this.broadcastEvent("explosion", this.snakes[j].cells[0].pos);
                 }
             }
             if (aliveSnakes !== 0) {
@@ -329,7 +314,7 @@ class Server {
                 }, 1000);
             }
             this.properties.checkHotsDone = true;
-        } else if (Math.floor(this.elapsedTime()) % 45 === 1) {
+        } else if (Math.floor(this.elapsedTime()) % 10 === 1) {
             this.properties.checkHotsDone = false;
         }
 
@@ -350,6 +335,9 @@ class Server {
 
         if (this.countThings("ClassicFood") < Math.ceil(this.snakes.length / 2)) {
             this.things.push(new ClassicFood(Server.random(0, this.width), Server.random(0, this.height)));
+        }
+        if (this.countThings("SpeedBooster") < 1) {
+            this.things.push(new SpeedBooster(Server.random(0, this.width), Server.random(0, this.height)));
         }
         this.simFrame++;
     }
@@ -396,6 +384,12 @@ class Server {
                 this.things.splice(i, 1);
                 i--;
             }
+        }
+    }
+
+    broadcastEvent(eventName, eventData) {
+        for (let i = 0; i < this.snakes.length; i++) {
+            this.snakes[i].properties.peerjsConnection.send({event: eventName, eventData: eventData});
         }
     }
 

@@ -62,4 +62,37 @@ class Snake {
         return toRet;
     }
 
+    edgeTeleport(width, height) {
+        if (this.cells[0]) {
+            let snakeHead = this.cells[0];
+            if (snakeHead.pos.x < 0) {
+                snakeHead.pos.x = width - 1;
+            }
+            if (snakeHead.pos.x >= width) {
+                snakeHead.pos.x = 0;
+            }
+            if (snakeHead.pos.y < 0) {
+                snakeHead.pos.y = height - 1;
+            }
+            if (snakeHead.pos.y >= height) {
+                snakeHead.pos.y = 0;
+            }
+        }
+    }
+
+    edgeBounce(width, height) {
+        if (this.cells[0]) {
+            let snakeHead = this.cells[0];
+            //TODO Adjust mechanism (now it bounces)
+            if (snakeHead.pos.x > width || snakeHead.pos.x < 0) {
+                this.properties.direction.x *= -1;
+                snakeHead.pos.x += this.properties.direction.x * 2;
+            }
+            if (snakeHead.pos.y > height || snakeHead.pos.y < 0) {
+                this.properties.direction.y *= -1;
+                snakeHead.pos.y += this.properties.direction.y * 2;
+            }
+            //END TODO
+        }
+    }
 }
