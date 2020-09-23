@@ -1,3 +1,5 @@
+let bots = [];
+
 document.addEventListener('DOMContentLoaded', () => {
     hide("join-insert-match-code");
     hide("host-choose-mode");
@@ -52,6 +54,16 @@ function createServer(mode) {
     server.peer.on('open', ()  => {
         gbI("server-peer-id").innerText = server.peer.id;
         client = new MatchClient(server.peer.id);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get("bots") !== null) {
+            if (typeof parseInt(urlParams.get("bots")) === "number") {
+                for (let i = 0; i < parseInt(urlParams.get("bots")); i++) {
+                    bots.push(new SnakeBot(server.peer.id));
+                }
+            }
+        }
+
         hide("host-connecting");
         show("server-lobby-status");
     });

@@ -5,6 +5,9 @@ class MatchClient {
 
     mySnakeIndex = -1;
 
+    lastSentDir = {x: 0, y: 0};
+    serverMode = -1;
+
     receivedEvents = [];
 
     peer = undefined;
@@ -31,6 +34,9 @@ class MatchClient {
                 if (typeof dt.yourIndex !== 'undefined') {
                     this.mySnakeIndex = dt.yourIndex;
                 }
+                if (typeof dt.serverMode !== "undefined") {
+                    this.serverMode = dt.serverMode;
+                }
             });
         });
         this.peer.on("error", (e) => {
@@ -45,6 +51,7 @@ class MatchClient {
 
     sendDirection(x, y) {
         if (this.serverConn && this.serverConn.open) {
+            this.lastSentDir = {x: x, y: y};
             this.serverConn.send({direction: {x: x, y: y}});
         }
     }

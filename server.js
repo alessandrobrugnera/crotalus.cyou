@@ -96,6 +96,7 @@ class Server {
                     }
                 });
             } else if (this.mode === Server.ONE_HOT_MODE) {
+                this.snakes[i].properties.speedBoost = 1;
                 this.snakes[i].properties.peerjsConnection.on("data", (dt) => {
                     if (dt.direction) {
                         dt.direction.x = Math.floor(dt.direction.x);
@@ -106,6 +107,9 @@ class Server {
                                 this.snakes[i].properties.direction = dt.direction;
                             }
                         }
+                    }
+                    if (typeof dt.snakeName !== "undefined") {
+                        this.snakes[i].properties.name = Server.filterString(dt.snakeName);
                     }
                 });
             }
@@ -185,7 +189,7 @@ class Server {
         this.clearThings();
 
         if (this.countThings("ClassicFood") < Math.ceil(this.snakes.length / 2)) {
-            this.things.push(new ClassicFood(Server.random(0, this.width), Server.random(0, this.height)));
+            this.things.push(new ClassicFood(Server.random(0, this.width - 1), Server.random(0, this.height - 1)));
         }
         this.simFrame++;
     }
@@ -227,7 +231,7 @@ class Server {
         this.clearThings();
 
         if (this.countThings("ClassicFood") < 1) {
-            this.things.push(new ClassicFood(Server.random(0, this.width), Server.random(0, this.height)));
+            this.things.push(new ClassicFood(Server.random(0, this.width - 1), Server.random(0, this.height - 1)));
         }
         this.simFrame++;
     }
@@ -236,9 +240,6 @@ class Server {
         let aliveSnakes = 0;
         for (let i = 0; i < this.snakes.length; i++) {
             let currSnake = this.snakes[i];
-            if (typeof currSnake.properties.speedBoost === "undefined") {
-                currSnake.properties.speedBoost = 1;
-            }
             for (let j = 0; j < currSnake.cells.length; j++) {
                 if (currSnake.properties.dead) {
                     currSnake.cells[j].color = Colors.BLUE;
@@ -296,7 +297,7 @@ class Server {
             }
         }
 
-        if (!this.properties.checkHotsDone && Math.floor(this.elapsedTime()) % 10 === 0) {
+        if (!this.properties.checkHotsDone && Math.floor(this.elapsedTime()) % 45 === 0) {
             for (let j = 0; j < this.snakes.length; j++) {
                 if (this.snakes[j].properties.isHot) {
                     this.snakes[j].properties.isHot = false;
@@ -315,7 +316,7 @@ class Server {
                 }, 1000);
             }
             this.properties.checkHotsDone = true;
-        } else if (Math.floor(this.elapsedTime()) % 10 === 1) {
+        } else if (Math.floor(this.elapsedTime()) % 45 === 1) {
             this.properties.checkHotsDone = false;
         }
 
@@ -335,10 +336,10 @@ class Server {
         this.clearThings();
 
         if (this.countThings("ClassicFood") < Math.ceil(this.snakes.length / 2)) {
-            this.things.push(new ClassicFood(Server.random(0, this.width), Server.random(0, this.height)));
+            this.things.push(new ClassicFood(Server.random(0, this.width - 1), Server.random(0, this.height - 1)));
         }
         if (this.countThings("SpeedBooster") < 1) {
-            this.things.push(new SpeedBooster(Server.random(0, this.width), Server.random(0, this.height)));
+            this.things.push(new SpeedBooster(Server.random(0, this.width - 1), Server.random(0, this.height - 1)));
         }
         this.simFrame++;
     }
@@ -363,7 +364,8 @@ class Server {
                     dimensions: {w: t.width, h: t.height},
                     snakes: snks,
                     things: t.stringifyThings(),
-                    yourIndex: i
+                    yourIndex: i,
+                    serverMode: this.mode
                 });
             }
         }, 1000 / this.peerDispatchRate);
@@ -418,6 +420,19 @@ class Server {
             }
         }
         return true;
+    }
+
+    static filterString(str) {
+        let chSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234456789_. ";
+        let finalStr = "";
+        if (typeof str === "string") {
+            for (let i = 0; i < str.length; i++) {
+                if (chSet.includes(str.charAt(i))) {
+                    finalStr = finalStr.concat(str.charAt(i));
+                }
+            }
+        }
+        return finalStr;
     }
 
     elapsedTime() {

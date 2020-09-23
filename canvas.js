@@ -26,6 +26,9 @@ function draw() {
                 if (i === client.mySnakeIndex && j === 0) {
                     fill(tmpCell.color[0], tmpCell.color[1], tmpCell.color[2], 80);
                     text("YOU", tmpCell.pos.x * width / client.dimensions.w, tmpCell.pos.y * height / client.dimensions.h);
+                } else if (j === 0 && typeof client.snakes[i].properties.name !== "undefined") {
+                    fill(tmpCell.color[0], tmpCell.color[1], tmpCell.color[2], 80);
+                    text(client.snakes[i].properties.name, tmpCell.pos.x * width / client.dimensions.w, tmpCell.pos.y * height / client.dimensions.h);
                 }
                 fill(tmpCell.color[0], tmpCell.color[1], tmpCell.color[2]);
                 rect(tmpCell.pos.x * width / client.dimensions.w, tmpCell.pos.y * height / client.dimensions.h, width / client.dimensions.w, height / client.dimensions.h);
